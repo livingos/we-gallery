@@ -79,6 +79,11 @@ class We_Gallery_Plugin {
 
         // shortcode handler
         add_shortcode( 'wegallery', array( $this, 'shortcode' ) );
+
+        // templates
+        add_filter( 'template_include',  array( $this,'include_template_function' ) );
+        add_filter('the_content', array( $this,'gallery_content'));
+
     }
 
     /**
@@ -202,8 +207,8 @@ class We_Gallery_Plugin {
     function register_post_type() {
 
         $labels = array(
-            'name'                => _x( 'Galleries', 'Post Type General Name', 'wegal' ),
-            'singular_name'       => _x( 'Gallery', 'Post Type Singular Name', 'wegal' ),
+            'name'                => __( 'Galleries', 'Post Type General Name', 'wegal' ),
+            'singular_name'       => __( 'Gallery', 'Post Type Singular Name', 'wegal' ),
             'menu_name'           => __( 'Galleries', 'wegal' ),
             'parent_item_colon'   => __( 'Parent Gallery:', 'wegal' ),
             'all_items'           => __( 'All Galleries', 'wegal' ),
@@ -221,9 +226,9 @@ class We_Gallery_Plugin {
             'label'               => __( 'we_gallery', 'wegal' ),
             'description'         => __( 'Gallery post type', 'wegal' ),
             'labels'              => $labels,
-            'supports'            => array( 'title', ),
+            'supports'            => array( 'title', 'thumbnail'),
             'hierarchical'        => false,
-            'public'              => false,
+            'public'              => true,
             'show_ui'             => true,
             'show_in_menu'        => true,
             'show_in_nav_menus'   => true,
@@ -231,10 +236,12 @@ class We_Gallery_Plugin {
             'menu_position'       => 5,
             'menu_icon'           => 'dashicons-images-alt2',
             'can_export'          => true,
-            'has_archive'         => false,
+            'has_archive'         => true,
+            'query_var' => true,
             'exclude_from_search' => true,
             'publicly_queryable'  => true,
-            'capability_type'     => 'page',
+            'capability_type'     => 'post',
+            'rewrite' => array( 'slug' => 'galleries' ),
         );
 
         register_post_type( wegal_get_post_type(), $args );
@@ -318,6 +325,60 @@ class We_Gallery_Plugin {
         $content = ob_get_clean();
 
         return apply_filters( 'wegallery_shortcode', $content, $gallery_images, $id, $gallery );
+    }
+
+
+
+    /**
+     * Load gallery into the page content for single gallery view
+     *
+     * @return content
+     */
+    function gallery_content( $content ){
+
+        if ( get_post_type() == wegal_get_post_type() ) {
+
+            if( is_single() ) {
+                $template_path = wegal_get_template( 'gallery-single' );
+            } else {
+                $template_path = wegal_get_template( 'gallery-archive' );
+            }
+
+            ob_start();
+
+            if ( file_exists( $template_path ) ) {
+                include $template_path;
+            }
+
+            $content = ob_get_clean();
+
+            return apply_filters( 'wegallery_gallery_content', $content );
+
+        }
+
+        return $content;
+
+    }
+
+    /**
+     * Load templates for single views
+     *
+     * @return template_path
+     */
+    function include_template_function( $template_path ) {
+
+        if ( get_post_type() == wegal_get_post_type() ) {
+
+            if ( is_single() ) {
+                // checks if the file exists in the theme first,
+                // otherwise serve the file from the plugin
+                if ( $theme_file = locate_template( array ( 'single-gallery.php', 'page.php' ) ) ) {
+                    $template_path = $theme_file;
+
+                }
+            }
+        }
+        return $template_path;
     }
 
     /**

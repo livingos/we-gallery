@@ -124,3 +124,28 @@ function wegal_show_gallery( $gallery_id, $args = array() ) {
 
     echo We_Gallery_Plugin::shortcode( $args );
 }
+
+/**
+ * Template function to get a single featured image with fall back to first attachment
+ *
+ * @param $size
+ * @return array
+ */
+function wegal_get_featured_image($size){
+    global $post;
+
+    if( has_post_thumbnail($post->ID) ) {
+       return get_the_post_thumbnail($post->ID, $size ,array('title'	=> trim(strip_tags( $post->post_title ))));
+    }
+
+    $gallery = wegal_get_gallery( $post->ID );
+
+    $image_ids = $gallery->get_image_ids();
+
+    if ( !$image_ids ) {
+        return false;
+    }
+
+    return wp_get_attachment_image($image_ids[0],$size);
+
+}

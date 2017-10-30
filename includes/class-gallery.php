@@ -110,4 +110,5 @@ class We_Gallery_Gallery {
 
         return apply_filters( 'wegal_get_images', $image_array, $image_ids, $this->ID, $this->post );
     }
+
 }
